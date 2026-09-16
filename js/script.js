@@ -1,103 +1,141 @@
 $(document).ready(function() {
+    const API_URL = 'http://localhost:3000/api';
+    let citasGlobales = [];
 
-    // Simulación de base de datos inicial para usar un ciclo 'for'
-    const citasIniciales = [
-        { doctor: "Dr. Pérez", paciente: "Ana Rodríguez", motivo: "Dolor lumbar", estado: "activo" },
-        { doctor: "Dra. Gómez", paciente: "Carlos Ruiz", motivo: "Chequeo general", estado: "pasado" }
-    ];
+    // 1. LOGIN
+    $('#form-login').on('submit', async function(e) {
+        e.preventDefault();
+        const usuario = $('#username').val();
+        const password = $('#password').val();
 
-    // Función para renderizar citas dinámicamente (Ciclo for y manipulación DOM)[cite: 1]
-    function renderizarCitas(citas) {
-        const contenedor = $('#contenedor-citas');
-        contenedor.empty(); // Limpiar contenedor
+        try {
+            const response = await fetch(`${API_URL}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include', // <- CLAVE PARA XAMPP Y SESIONES
+                body: JSON.stringify({ usuario, password })
+            });
 
-        if(citas.length === 0) {
-            contenedor.append('<p>No se encontraron citas.</p>');
-            return;
+            if (response.ok) {
+                const data = await response.json();
+                $('#user-display').text(`👤 ${data.usuario} (Admin)`);
+                $('#login-modal').fadeOut();
+                $('#main-app').fadeIn();
+                cargarCitas();
+            } else {
+                $('#login-error').show().text("Credenciales inválidas");
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            $('#login-error').show().text("Error de conexión al servidor");
         }
+    });
 
-        // Estructura de control: Ciclo
-        for (let i = 0; i < citas.length; i++) {
-            let cita = citas[i];
-            let html = `
-                <div class="cita-card" data-estado="${cita.estado}">
-                    <h4>${cita.doctor} - Consultorio ${i + 1}</h4>
-                    <p><strong>Paciente:</strong> ${cita.paciente} | <strong>Motivo:</strong> ${cita.motivo}</p>
-                </div>
-            `;
-            contenedor.append(html);
-        }
+    // LOGOUT
+    $('#menu-logout').on('click', function(e) {
+        e.preventDefault();
+        $('#main-app').hide();
+        $('#login-modal').fadeIn();
+        $('#form-login')[0].reset();
+    });
+
+    // 2. CRUD
+    async function cargarCitas() {
+        try {
+            const res = await fetch(`${API_URL}/citas`, { credentials: 'include' });
+            citasGlobales = await res.json();
+            aplicarFiltros();
+        } catch (error) { console.error('Error:', error); }
     }
 
-    // Carga inicial
-    renderizarCitas(citasIniciales);
+    $('#form-ingreso').on('submit', async function(e) {
+        e.preventDefault(); 
+        const nuevaCita = {
+            nombre_paciente: $('#nombre').val(),
+            codigo_seguro: $('#codigo').val(),
+            especialidad: $('#especialidad').val()
+        };
 
-    // 1. EVENTO ONCLICK: Navegación entre vistas[cite: 1]
+        try {
+            const res = await fetch(`${API_URL}/citas`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(nuevaCita)
+            });
+
+            if (res.ok) {
+                this.reset();
+                $('#menu-citas').click(); 
+                cargarCitas();
+            } else { alert("Error al guardar."); }
+        } catch (error) { console.error("Error:", error); }
+    });
+
+    $('#contenedor-citas').on('click', '.btn-update', async function() {
+        const id = $(this).data('id');
+        const nuevoEstado = $(this).data('estado') === 'activo' ? 'pasado' : 'activo';
+        await fetch(`${API_URL}/citas/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ estado: nuevoEstado })
+        });
+        cargarCitas();
+    });
+
+    $('#contenedor-citas').on('click', '.btn-delete', async function() {
+        if(confirm('¿Eliminar registro físico de BD?')) {
+            await fetch(`${API_URL}/citas/${$(this).data('id')}`, { method: 'DELETE', credentials: 'include' });
+            cargarCitas();
+        }
+    });
+
+    // 3. INTERFAZ Y FILTROS
+    function renderizarCitas(citas) {
+        const contenedor = $('#contenedor-citas');
+        contenedor.empty(); 
+        if(citas.length === 0) return contenedor.append('<p>No hay registros.</p>');
+
+        citas.forEach(cita => {
+            let badge = cita.estado === 'activo' ? 'green' : 'gray';
+            contenedor.append(`
+                <div class="cita-card" data-estado="${cita.estado}">
+                    <h4>ID ${cita.id} - ${cita.especialidad} <span style="color:${badge}; font-size:12px;">(${cita.estado})</span></h4>
+                    <p><strong>Paciente:</strong> ${cita.nombre_paciente} | <strong>Seguro:</strong> ${cita.codigo_seguro}</p>
+                    <div class="card-actions">
+                        <button class="btn-sm btn-update" data-id="${cita.id}" data-estado="${cita.estado}">Alternar</button>
+                        <button class="btn-sm btn-delete" data-id="${cita.id}">Borrar</button>
+                    </div>
+                </div>
+            `);
+        });
+    }
+
+    function aplicarFiltros() {
+        let termino = $('#buscador-citas').val().toLowerCase();
+        let mostrarActivos = $('#filtro-activo').is(':checked');
+        let mostrarPasados = $('#filtro-pasado').is(':checked');
+
+        let filtradas = citasGlobales.filter(cita => {
+            let coincideTexto = cita.nombre_paciente.toLowerCase().includes(termino);
+            let coincideEstado = (mostrarActivos && cita.estado === 'activo') || (mostrarPasados && cita.estado === 'pasado');
+            return coincideTexto && coincideEstado;
+        });
+        renderizarCitas(filtradas);
+    }
+
+    $('#buscador-citas').on('input', aplicarFiltros);
+    $('#filtro-activo, #filtro-pasado').on('change', aplicarFiltros);
+
     $('#menu-citas, #btn-cancelar').on('click', function(e) {
         e.preventDefault();
         $('#vista-formulario').hide();
         $('#vista-listado').fadeIn();
-        $('.sidebar nav ul li a').removeClass('active');
-        $('#menu-citas').addClass('active');
     });
 
     $('#btn-nueva-cita').on('click', function() {
         $('#vista-listado').hide();
         $('#vista-formulario').fadeIn();
-    });
-
-    // 2. EVENTO ONINPUT: Búsqueda en tiempo real[cite: 1]
-    $('#buscador-citas').on('input', function() {
-        let termino = $(this).val().toLowerCase();
-        
-        // Estructura de control: Filtro/Condicional
-        let citasFiltradas = citasIniciales.filter(cita => 
-            cita.paciente.toLowerCase().includes(termino) || 
-            cita.doctor.toLowerCase().includes(termino)
-        );
-        renderizarCitas(citasFiltradas);
-    });
-
-    // 3. EVENTO ONCHANGE: Filtro por estado (Checkbox)[cite: 1]
-    $('#filtro-pasado').on('change', function() {
-        let mostrarPasados = $(this).is(':checked');
-        
-        // Manipulación dinámica según condicional
-        if(mostrarPasados) {
-            $('.cita-card[data-estado="pasado"]').show();
-        } else {
-            $('.cita-card[data-estado="pasado"]').hide();
-        }
-    });
-
-    // 4. EVENTO ONSUBMIT: Validación y creación dinámica de registro[cite: 1]
-    $('#form-ingreso').on('submit', function(e) {
-        e.preventDefault(); // Evita recargar la página
-        
-        // Capturar datos
-        let pacienteNuevo = $('#nombre').val();
-        let especialidad = $('#especialidad').val();
-        
-        // Validación básica (Condicional)
-        if(pacienteNuevo.trim() === '') {
-            alert("El nombre del paciente es requerido.");
-            return;
-        }
-
-        // Lógica para añadir la nueva cita al "backend" simulado
-        // Nota: Esta estructura de objeto podría mapearse posteriormente a un estándar FHIR o similar.
-        let nuevaCita = {
-            doctor: "Dr. Asignado (" + especialidad + ")",
-            paciente: pacienteNuevo,
-            motivo: "Consulta de Primera Vez",
-            estado: "activo"
-        };
-
-        citasIniciales.push(nuevaCita);
-        
-        // Limpiar formulario y volver al listado
-        this.reset();
-        $('#menu-citas').click(); // Reutiliza el evento click
-        renderizarCitas(citasIniciales); // Renderiza nuevamente con la cita agregada
     });
 });
