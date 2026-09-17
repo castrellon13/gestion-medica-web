@@ -3,9 +3,12 @@ const mysql = require('mysql2');
 const cors = require('cors');
 const session = require('express-session');
 const { body, validationResult } = require('express-validator');
+const path = require('path');
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+app.use(express.static(__dirname));
 
 // 1. CONFIGURACIÓN ESTRICTA DE CORS Y MIDDLEWARES[cite: 5]
 // Esto permite que XAMPP hable con Node.js y comparta cookies de sesión
@@ -110,6 +113,10 @@ app.delete('/api/citas/:id', (req, res) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ mensaje: "Registro eliminado" });
     });
+});
+
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.listen(port, () => console.log(`Servidor Backend activo en puerto ${port}`));
