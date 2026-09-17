@@ -1,5 +1,5 @@
 $(document).ready(function() {
-    const API_URL = 'http://localhost:3000/api';
+    const API_URL = 'https://gestion-medica-web-1.onrender.com';
     let citasGlobales = [];
 
     // 1. LOGIN
