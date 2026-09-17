@@ -5,7 +5,7 @@ const session = require('express-session');
 const { body, validationResult } = require('express-validator');
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 // 1. CONFIGURACIÓN ESTRICTA DE CORS Y MIDDLEWARES[cite: 5]
 // Esto permite que XAMPP hable con Node.js y comparta cookies de sesión
@@ -27,10 +27,10 @@ app.use(session({
 
 // 2. CONEXIÓN A BASE DE DATOS[cite: 5]
 const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'gestion_medica'
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'gestion_medica'
 });
 
 db.connect(err => {
