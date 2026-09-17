@@ -115,8 +115,5 @@ app.delete('/api/citas/:id', (req, res) => {
     });
 });
 
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
 
 app.listen(port, () => console.log(`Servidor Backend activo en puerto ${port}`));
