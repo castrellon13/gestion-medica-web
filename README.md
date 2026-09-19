@@ -74,3 +74,14 @@ gestion-medica-web/
 ├── package-lock.json        # Árbol de dependencias bloqueado
 ├── README.md                # Documentación técnica del proyecto
 └── server.js                # Servidor Express, conexión MySQL y API REST
+
+
+## 🔌 Especificación de la API REST
+
+| Método | Endpoint | Descripción | Parámetros / Body |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/login` | Autenticación de usuarios e inicio de sesión | `{ usuario, password }` |
+| `GET` | `/api/citas` | Obtiene el listado completo de citas ordenadas desc. | Ninguno |
+| `POST` | `/api/citas` | Crea un nuevo turno médico (sanitizado con express-validator) | `{ nombre_paciente, codigo_seguro, especialidad }` |
+| `PUT` | `/api/citas/:id` | Alterna o actualiza el estado de la cita (`activo` / `pasado`) | `{ estado }` |
+| `DELETE` | `/api/citas/:id` | Elimina físicamente el registro de la base de datos | Parámetro en URL (`:id`) |
