@@ -1,9 +1,9 @@
-$(document).ready(function() {
- const API_URL = '/api';
+$(document).ready(function () {
+    const API_URL = '/api';
     let citasGlobales = [];
 
     // 1. LOGIN
-    $('#form-login').on('submit', async function(e) {
+    $('#form-login').on('submit', async function (e) {
         e.preventDefault();
         const usuario = $('#username').val();
         const password = $('#password').val();
@@ -32,7 +32,7 @@ $(document).ready(function() {
     });
 
     // LOGOUT
-    $('#menu-logout').on('click', function(e) {
+    $('#menu-logout').on('click', function (e) {
         e.preventDefault();
         $('#main-app').hide();
         $('#login-modal').fadeIn();
@@ -48,8 +48,8 @@ $(document).ready(function() {
         } catch (error) { console.error('Error:', error); }
     }
 
-    $('#form-ingreso').on('submit', async function(e) {
-        e.preventDefault(); 
+    $('#form-ingreso').on('submit', async function (e) {
+        e.preventDefault();
         const nuevaCita = {
             nombre_paciente: $('#nombre').val(),
             codigo_seguro: $('#codigo').val(),
@@ -66,13 +66,13 @@ $(document).ready(function() {
 
             if (res.ok) {
                 this.reset();
-                $('#menu-citas').click(); 
+                $('#menu-citas').click();
                 cargarCitas();
             } else { alert("Error al guardar."); }
         } catch (error) { console.error("Error:", error); }
     });
 
-    $('#contenedor-citas').on('click', '.btn-update', async function() {
+    $('#contenedor-citas').on('click', '.btn-update', async function () {
         const id = $(this).data('id');
         const nuevoEstado = $(this).data('estado') === 'activo' ? 'pasado' : 'activo';
         await fetch(`${API_URL}/citas/${id}`, {
@@ -84,8 +84,8 @@ $(document).ready(function() {
         cargarCitas();
     });
 
-    $('#contenedor-citas').on('click', '.btn-delete', async function() {
-        if(confirm('¿Eliminar registro físico de BD?')) {
+    $('#contenedor-citas').on('click', '.btn-delete', async function () {
+        if (confirm('¿Eliminar registro físico de BD?')) {
             await fetch(`${API_URL}/citas/${$(this).data('id')}`, { method: 'DELETE', credentials: 'include' });
             cargarCitas();
         }
@@ -94,8 +94,8 @@ $(document).ready(function() {
     // 3. INTERFAZ Y FILTROS
     function renderizarCitas(citas) {
         const contenedor = $('#contenedor-citas');
-        contenedor.empty(); 
-        if(citas.length === 0) return contenedor.append('<p>No hay registros.</p>');
+        contenedor.empty();
+        if (citas.length === 0) return contenedor.append('<p>No hay registros.</p>');
 
         citas.forEach(cita => {
             let badge = cita.estado === 'activo' ? 'green' : 'gray';
@@ -128,13 +128,13 @@ $(document).ready(function() {
     $('#buscador-citas').on('input', aplicarFiltros);
     $('#filtro-activo, #filtro-pasado').on('change', aplicarFiltros);
 
-    $('#menu-citas, #btn-cancelar').on('click', function(e) {
+    $('#menu-citas, #btn-cancelar').on('click', function (e) {
         e.preventDefault();
         $('#vista-formulario').hide();
         $('#vista-listado').fadeIn();
     });
 
-    $('#btn-nueva-cita').on('click', function() {
+    $('#btn-nueva-cita').on('click', function () {
         $('#vista-listado').hide();
         $('#vista-formulario').fadeIn();
     });

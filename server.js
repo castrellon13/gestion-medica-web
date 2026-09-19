@@ -13,8 +13,8 @@ app.use(express.static(__dirname));
 // 1. CONFIGURACIÓN ESTRICTA DE CORS Y MIDDLEWARES[cite: 5]
 // Esto permite que XAMPP hable con Node.js y comparta cookies de sesión
 app.use(cors({
-    origin: function(origin, callback) { return callback(null, true); },
-    credentials: true 
+    origin: function (origin, callback) { return callback(null, true); },
+    credentials: true
 }));
 
 app.use(express.json());
@@ -46,7 +46,7 @@ db.connect(err => {
 // ==========================================
 app.post('/api/login', (req, res) => {
     const { usuario, password } = req.body || {};
-    
+
     // BYPASS GARANTIZADO: Si escribes admin / admin123, entrará siempre
     if (usuario === 'admin' && password === 'admin123') {
         req.session.usuario = 'admin';
@@ -57,7 +57,7 @@ app.post('/api/login', (req, res) => {
     const sql = "SELECT * FROM usuarios WHERE usuario = ?";
     db.query(sql, [usuario], (err, results) => {
         if (err) return res.status(500).json({ error: "Error interno" });
-        
+
         if (results.length > 0 && (password === results[0].password_hash || password === 'admin123')) {
             req.session.usuario = results[0].usuario;
             return res.json({ mensaje: "Login exitoso", usuario: results[0].usuario });
@@ -89,7 +89,7 @@ app.post('/api/citas', [
 
     const { nombre_paciente, codigo_seguro, especialidad } = req.body;
     const sql = "INSERT INTO citas (nombre_paciente, codigo_seguro, especialidad, estado) VALUES (?, ?, ?, 'activo')";
-    
+
     db.query(sql, [nombre_paciente, codigo_seguro, especialidad], (err, result) => {
         if (err) return res.status(500).json({ error: err.message });
         res.status(201).json({ mensaje: "Registro creado", id: result.insertId });
